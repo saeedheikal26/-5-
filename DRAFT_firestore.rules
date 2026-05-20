@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() { return request.auth != null; }
+    function isVerified() { return isSignedIn() && request.auth.token.email_verified == true; }
+    function isAdmin() { 
+      return isVerified() && request.auth.token.email == 'saeedheikal16@gmail.com'; 
+    }
+    function isOwner(userId) { return isVerified() && request.auth.uid == userId; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // User profiles
+    match /users/{userId} {
+      allow get: if isValidId(userId) && (isOwner(userId) || isAdmin());
+      allow list: if isAdmin(); // Only admins can browse user list
+
+      function isValidUser(data) {
+        return data.keys().hasAll(['name', 'phone', 'status', 'role', 'isPaid', 'startDate']) &&
+               data.name is string && data.name.size() <= 100 &&
+               data.phone is string && data.phone.size() <= 20 &&
+               data.status in ['pending', 'active', 'rejected'] &&
+               data.role in ['user', 'admin'] &&
+               data.isPaid is bool;
+      }
+
+      allow create: if isVerified() && isOwner(userId) && isValidId(userId) &&
+                       isValidUser(incoming()) &&
+                       incoming().status == 'pending' &&
+                       incoming().role == 'user' &&
+                       incoming().isPaid == false &&
+                       incoming().createdAt == request.time;
+
+      allow update: if isVerified() && isValidId(userId) && (
+        isAdmin() || (
+          isOwner(userId) &&
+          isValidUser(incoming()) &&
+          incoming().status == existing().status &&
+          incoming().role == existing().role &&
+          incoming().isPaid == existing().isPaid &&
+          incoming().createdAt == existing().createdAt &&
+          incoming().diff(existing()).affectedKeys().hasOnly([
+            'name', 'phone', 'onboarded', 'paymentHandle', 'receiptImage', 
+            'streak', 'referralCode', 'referralCount', 'totalPoints'
+          ])
+        )
+      );
+
+      allow delete: if isAdmin() && isValidId(userId);
+    }
+
+    // Daily records
+    match /records/{recordId} {
+      function isValidRecord(data) {
+        return data.keys().hasAll(['userId', 'date', 'scores', 'points']) &&
+               data.userId is string && isValidId(data.userId) &&
+               data.date is string &&
+               data.scores is map &&
+               data.points is number;
+      }
+
+      allow get: if isValidId(recordId) && (isOwner(existing().userId) || isAdmin());
+      allow list: if isVerified() && (resource.data.userId == request.auth.uid || isAdmin());
+
+      allow create: if isVerified() && isValidId(recordId) &&
+                       isOwner(incoming().userId) &&
+                       isValidRecord(incoming());
+
+      allow update: if isVerified() && isValidId(recordId) && (
+        isAdmin() || (
+          isOwner(existing().userId) &&
+          isValidRecord(incoming()) &&
+          incoming().userId == existing().userId &&
+          incoming().diff(existing()).affectedKeys().hasOnly(['scores', 'points', 'status', 'updatedAt'])
+        )
+      );
+
+      allow delete: if isAdmin() && isValidId(recordId);
+    }
+  }
+}

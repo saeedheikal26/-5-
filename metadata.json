@@ -1,0 +1,10 @@
+{
+  "name": "تحدي الـ 5 أيام - 5 Days Challenge",
+  "description": "تحدي تفاعلي وتنافسي للصلاة على النبي ﷺ بجوائز حقيقية ومميزات راقية",
+  "requestFramePermissions": [
+    "geolocation"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

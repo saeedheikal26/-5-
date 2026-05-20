@@ -1,0 +1,251 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user participating in the 30-day challenge",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Max 100 chars" },
+        "phone": { "type": "string", "description": "Max 20 chars" },
+        "status": { "type": "string", "enum": ["pending", "active", "rejected"] },
+        "role": { "type": "string", "enum": ["user", "admin"] },
+        "isPaid": { "type": "boolean" },
+        "subscription": {
+          "type": "object",
+          "properties": {
+            "isActive": { "type": "boolean" },
+            "startedAt": { "type": "string", "format": "date-time" },
+            "expiresAt": { "type": "string", "format": "date-time" },
+            "seasonId": { "type": "string" },
+            "paymentStatus": { "type": "string", "enum": ["pending", "approved", "rejected"] }
+          }
+        },
+        "monthlyPoints": { "type": "number" },
+        "lifetimePoints": { "type": "number" },
+        "currentSeason": { "type": "string" },
+        "totalPoints": { "type": "number" },
+        "quranPoints": { "type": "number" },
+        "completedPagesToday": { "type": "number" },
+        "quranChallenge": { "type": "object" },
+        "startDate": { "type": "string", "format": "date-time" },
+        "lastActive": { "type": "string", "format": "date-time" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "receiptImage": { "type": "string" },
+        "onboarded": { "type": "boolean" },
+        "paymentHandle": { "type": "string" },
+        "avatar": { "type": "string" },
+        "streak": { "type": "number" },
+        "referralCode": { "type": "string" },
+        "referralCount": { "type": "number" }
+      },
+      "required": ["name", "phone", "paymentHandle", "status", "role", "isPaid", "startDate"]
+    },
+    "Record": {
+      "title": "Daily Record",
+      "description": "User's progress for a specific day",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "scores": { "type": "object" },
+        "points": { "type": "number" },
+        "status": { "type": "string" }
+      },
+      "required": ["userId", "date", "scores", "points"]
+    },
+    "PrayerRecord": {
+      "title": "Daily Prayer Record",
+      "description": "User's prayer completion status for a specific day",
+      "type": "object",
+      "properties": {
+        "date": { "type": "string", "format": "date" },
+        "fajr": { "$ref": "#/entities/PrayerStatus" },
+        "dhuhr": { "$ref": "#/entities/PrayerStatus" },
+        "asr": { "$ref": "#/entities/PrayerStatus" },
+        "maghrib": { "$ref": "#/entities/PrayerStatus" },
+        "isha": { "$ref": "#/entities/PrayerStatus" },
+        "totalDailyPoints": { "type": "number" },
+        "isAllCompleted": { "type": "boolean" }
+      }
+    },
+    "PrayerStatus": {
+      "title": "Single Prayer Status",
+      "type": "object",
+      "properties": {
+        "completed": { "type": "boolean" },
+        "points": { "type": "number" },
+        "imageUrl": { "type": "string" },
+        "completedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "WalkingTask": {
+      "title": "Walking Task Record",
+      "description": "Daily walking task progress for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "distance": { "type": "number" },
+        "goal": { "type": "number" },
+        "completed": { "type": "boolean" },
+        "pointsEarned": { "type": "number" },
+        "completedAt": { "type": "string", "format": "date-time" },
+        "date": { "type": "string", "format": "date" }
+      },
+      "required": ["userId", "distance", "goal", "completed", "pointsEarned", "date"]
+    },
+    "AdminLog": {
+      "title": "Admin Activity Log",
+      "description": "Log of administrative actions taken in the dashboard",
+      "type": "object",
+      "properties": {
+        "adminId": { "type": "string" },
+        "adminName": { "type": "string" },
+        "action": { "type": "string" },
+        "targetUserId": { "type": "string" },
+        "targetUserName": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["adminId", "adminName", "action", "timestamp"]
+    },
+    "PaymentRequest": {
+      "title": "Payment Request",
+      "description": "Subscription payment verification request via InstaPay",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "userEmail": { "type": "string" },
+        "transactionId": { "type": "string" },
+        "amount": { "type": "number" },
+        "status": { "type": "string", "enum": ["pending", "approved", "rejected"] },
+        "paymentMethod": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "transactionId", "amount", "status", "createdAt"]
+    },
+    "SystemNotification": {
+      "title": "System Notification",
+      "description": "Broadcast message for all users",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "adminId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["title", "message", "createdAt"]
+    },
+    "AppNotification": {
+      "title": "App Notification",
+      "description": "Individual notification for a user",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "title": { "type": "string" },
+        "message": { "type": "string" },
+        "read": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "type": { "type": "string" }
+      },
+      "required": ["userId", "title", "message", "read", "createdAt"]
+    },
+    "Season": {
+      "title": "Season",
+      "description": "Information about a specific challenge season",
+      "type": "object",
+      "properties": {
+        "title": { "type": "string" },
+        "startsAt": { "type": "string", "format": "date-time" },
+        "endsAt": { "type": "string", "format": "date-time" },
+        "isFinished": { "type": "boolean" }
+      }
+    },
+    "SeasonResult": {
+      "title": "Season Result",
+      "description": "Archived results of a finished season",
+      "type": "object",
+      "properties": {
+        "seasonId": { "type": "string" },
+        "winners": { "type": "array" },
+        "topUsers": { "type": "array" },
+        "finishedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "ActivityLog": {
+      "title": "Activity Log",
+      "description": "Activity stream log indicating active prayer accomplishments",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "amount": { "type": "number" },
+        "message": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "amount", "message", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Collection of users and administrators"
+    },
+    "/notifications/{notifId}": {
+      "schema": "AppNotification",
+      "description": "Global notification storage with userId field"
+    },
+    "/users/{userId}/prayers/{date}": {
+      "schema": "PrayerRecord",
+      "description": "Daily prayer subcollection for a user"
+    },
+    "/users/{userId}/quranDailyProgress/{date}": {
+      "description": "Daily Quran reading progress for a user",
+      "schema": "QuranDailyProgress"
+    },
+    "/quranSubmissions/{submissionId}": {
+      "description": "Individual page submissions for Quran challenge",
+      "schema": "QuranSubmission"
+    },
+    "/challengeSubmissions/{submissionId}": {
+      "description": "Screenshots and submissions for admin review",
+      "schema": "ChallengeSubmission"
+    },
+    "/records/{recordId}": {
+      "schema": "Record",
+      "description": "Daily task records for all users"
+    },
+    "/walkingTasks/{taskId}": {
+      "schema": "WalkingTask",
+      "description": "Daily walking challenge tracking"
+    },
+    "/payments/{paymentId}": {
+      "schema": "PaymentRequest",
+      "description": "InstaPay transaction verification records"
+    },
+    "/adminLogs/{logId}": {
+      "schema": "AdminLog",
+      "description": "Global activity logs for administrators"
+    },
+    "/system_notifications/{notifId}": {
+      "schema": "SystemNotification",
+      "description": "Global broadcast notifications from admins"
+    },
+    "/seasons/{seasonId}": {
+      "schema": "Season",
+      "description": "Configuration for seasons"
+    },
+    "/seasonResults/{resultId}": {
+      "schema": "SeasonResult",
+      "description": "Archived winners for each season"
+    },
+    "/activities/{activityId}": {
+      "schema": "ActivityLog",
+      "description": "Real-time activity stream log items"
+    },
+    "/archivedCycles/{cycleId}": {
+      "description": "Archived player scores per reset cycle"
+    }
+  }
+}

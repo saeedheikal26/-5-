@@ -1,0 +1,34 @@
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;700;900&family=Tajawal:wght@400;500;700;800;900&family=Inter:wght@400;600;900&family=Amiri:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Tajawal", "Cairo", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Amiri", serif;
+  --color-brand: #059669; /* Peaceful Islamic Green / Emerald */
+  --color-brand-light: #10B981; /* Fresh Light Emerald Green */
+  --color-brand-dark: #064E3B; /* Deep Spiritual Green */
+  --color-accent: #059669; /* Accent Green */
+  --color-emerald: #10B981;
+  --color-luxblack: #FAFAF9; /* Soft Off-White warm background */
+  --color-luxgray: #F0F4F1; /* Gentle Minty Sage Gray background */
+  --color-luxcard: #FFFFFF; /* Crisp white cards */
+}
+
+@utility btn-3d {
+  @apply border-b-4 border-brand-dark/30 active:border-b-0 active:translate-y-[2px] transition-all;
+}
+
+@utility card-duo {
+  @apply bg-luxcard rounded-[2.5rem] border border-brand/10 shadow-sm transition-all hover:border-brand/20 hover:shadow-md;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-tap-highlight-color: transparent;
+  @apply bg-luxblack text-slate-800 selection:bg-brand/10 selection:text-brand-dark;
+}
+

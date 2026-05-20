@@ -1,0 +1,119 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // --- GLOBAL HELPERS ---
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(uid) { return isSignedIn() && request.auth.uid == uid; }
+    
+    // Hardened Admin helper completely avoiding recursion on the users collection
+    function isAdmin() { 
+      return isSignedIn() && 
+        request.auth.token.email != null && 
+        (
+          request.auth.token.email.toLowerCase() == 'saeedheikal16@gmail.com' ||
+          exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+        );
+    }
+
+    // Default deny rule
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // --- USERS COLLECTION ---
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && (resource.data.status == 'active' || resource.data.role == 'admin' || userId == request.auth.uid);
+      
+      // Creating a user document
+      allow create: if isSignedIn() && isOwner(userId) && (
+        request.resource.data.role == 'user' && 
+        request.resource.data.status == 'pending' &&
+        request.resource.data.paymentStatus == 'none' &&
+        request.resource.data.onboardingCompleted == false &&
+        request.resource.data.salawatCount == 0
+      ) || isAdmin();
+
+      // Standard user updates (Onboarding or Incremental Salawat)
+      allow update: if isSignedIn() && (
+        isOwner(userId) && (
+          // Onboarding Write: whitelist ONLY identity and onboarding details
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'phone', 'paymentHandle', 'onboardingCompleted', 'updatedAt']) &&
+           request.resource.data.onboardingCompleted == true) ||
+          
+          // Incremental Write: whitelist ONLY salawatCount and updatedAt updates
+          (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['salawatCount', 'updatedAt']) &&
+           request.resource.data.salawatCount >= resource.data.salawatCount)
+        )
+      ) || isAdmin();
+
+      allow delete: if isAdmin();
+    }
+
+    // --- ACTIVITIES COLLECTION ---
+    match /activities/{activityId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn() && 
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.createdAt == request.time &&
+        request.resource.data.amount is int &&
+        request.resource.data.amount > 0;
+      allow update, delete: if isAdmin();
+    }
+
+    // --- PAYMENTS ---
+    match /payments/{paymentId} {
+      allow get: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow list: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && 
+        request.resource.data.userId == request.auth.uid && 
+        request.resource.data.status == 'pending' &&
+        request.resource.data.createdAt == request.time;
+      allow update, delete: if isAdmin();
+    }
+
+    // --- NOTIFICATIONS ---
+    match /notifications/{notifId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create, delete: if isAdmin();
+      allow update: if isSignedIn() && (
+        (resource.data.userId == request.auth.uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read'])) || 
+        isAdmin()
+      );
+    }
+
+    // --- RECORDS ---
+    match /records/{recordId} {
+      allow read, write: if isSignedIn() && (
+        recordId.startsWith(request.auth.uid + '_') || 
+        (resource != null && resource.data.userId == request.auth.uid) ||
+        (request.resource != null && request.resource.data.userId == request.auth.uid) ||
+        isAdmin()
+      );
+    }
+
+    // --- SUBMISSIONS ---
+    match /challengeSubmissions/{submissionId} {
+      allow read: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // --- ADMIN ACTION LOGS ---
+    match /adminLogs/{id} {
+      allow read, write: if isAdmin();
+    }
+
+    // --- ARCHIVED SEASONS & CYCLES ---
+    match /seasons/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /seasonResults/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /archivedCycles/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+    match /system_notifications/{id} { allow read: if isSignedIn(); allow write: if isAdmin(); }
+
+    // --- LEGACY ---
+    match /walkingTasks/{id} { allow read, write: if isSignedIn(); }
+    match /quranSubmissions/{id} { allow read, write: if isSignedIn(); }
+  }
+}
